@@ -5,6 +5,7 @@ const axios = require('axios');
 
 const app = express();
 const API_PREFFIX = '/api/items';
+const MELI_API_URL = 'https://api.mercadolibre.com';
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -36,6 +37,7 @@ const parseItem = (item) => {
 
 /********************************/
 
+/******** SEARCH BY QUERY ********/
 const parseSearchCategories = (filters) => {
   const category = filters.find(filter => {
     return filter.id === 'category';
@@ -69,7 +71,7 @@ const parseSearchData = (data) => {
 }
 
 const searchData = async (query) => {
-  const response = await axios.get(`https://api.mercadolibre.com/sites/MLA/search?q=${query}&limit=4`);
+  const response = await axios.get(`${MELI_API_URL}/sites/MLA/search?q=${query}&limit=4`);
   const { data } = response;
 
   return parseSearchData(data);
@@ -90,6 +92,45 @@ app.get(`${API_PREFFIX}`, async (req, res) => {
     res.status(400).json('Ingresá un criterio de búsqueda');
   }
 });
+/********************************/
+
+/******** SEARCH BY ID ********/
+const searchItemById = async (id) => {
+  const baseUrl = `${MELI_API_URL}/items/${id}`;
+  const urls = [
+    baseUrl,
+    `${baseUrl}/description`
+  ];
+
+  const [itemResponse, descriptionResponse] = await axios.all(urls.map(url => axios.get(url)));
+  const { data: item } = itemResponse;
+  const { sold_quantity, category_id } = item;
+
+  const { data: itemDescription } = descriptionResponse;
+  const { plain_text: description } = itemDescription;
+
+  console.log('item', item)
+
+  const parsedItem = parseItem(item);
+
+  return {
+    ...parsedItem,
+    sold_quantity,
+    category_id,
+    description
+  }
+}
+
+app.get(`${API_PREFFIX}/:id`, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const data = await searchItemById(id.trim());
+    res.json(data);
+  } catch (err) {
+    res.status(404).json('No se encontró el producto');
+  }
+});
+/********************************/
 
 app.listen(3000, () => {
   console.log('App is running on port 3000');
