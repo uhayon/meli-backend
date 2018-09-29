@@ -18,8 +18,9 @@ const parseAuthor = () => {
   };
 }
 
-const parseItem = (item) => {
-  const { id, title, price, currency_id, thumbnail: picture, condition, shipping: { free_shipping } } = item;
+const parseItem = (item, isDetail) => {
+  const { id, title, price, currency_id, condition, shipping: { free_shipping } } = item;
+  const picture = isDetail ? item.pictures[0].secure_url : item.thumbnail;
   const decimals = price.toString().split('.')[1];
   return {
     id,
@@ -109,15 +110,18 @@ const searchItemById = async (id) => {
   const { data: itemDescription } = descriptionResponse;
   const { plain_text: description } = itemDescription;
 
-  console.log('item', item)
+  const categoriesResponse = await axios.get(`https://api.mercadolibre.com/categories/${category_id}`);
+  const { path_from_root } = categoriesResponse.data;
+  const categories = path_from_root.map(path => path.name);
 
-  const parsedItem = parseItem(item);
+  const parsedItem = parseItem(item, true);
 
   return {
     ...parsedItem,
     sold_quantity,
     category_id,
-    description
+    description,
+    categories
   }
 }
 
