@@ -10,7 +10,7 @@ const MELI_API_URL = 'https://api.mercadolibre.com';
 app.use(bodyParser.json());
 app.use(cors());
 
-/******** GENERAL METHODS ********/
+/******** GENERAL METHODS *********/ 
 const parseAuthor = () => {
   return {
     name: 'Uriel',
